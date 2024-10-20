@@ -64,6 +64,15 @@ function aigfp_image_generator_register_settings()
         )
     );
 
+    // Register selected CPTs
+    register_setting(
+        'aigfp_image_generator_settings',
+        'aigfp_selected_cpts',
+        array(
+            'sanitize_callback' => 'aigfp_sanitize_cpts'
+        )
+    );
+
     add_settings_section(
         'aigfp_image_generator_section',
         esc_html__('Together API Key', 'ai-image-generator-for-posts'),
@@ -75,6 +84,14 @@ function aigfp_image_generator_register_settings()
         'aigfp_api_key',
         esc_html__('Together API Key', 'ai-image-generator-for-posts'),
         'aigfp_image_generator_api_key_field_callback',
+        'ai-image-generator-for-posts-settings',
+        'aigfp_image_generator_section'
+    );
+
+    add_settings_field(
+        'aigfp_selected_cpts',
+        esc_html__('Select Post Types for AI Image Generator', 'ai-image-generator-for-posts'),
+        'aigfp_image_generator_cpts_field_callback',
         'ai-image-generator-for-posts-settings',
         'aigfp_image_generator_section'
     );
@@ -112,4 +129,26 @@ function aigfp_image_generator_api_key_field_callback()
 {
     $api_key = get_option('aigfp_api_key');
     echo '<input type="text" name="aigfp_api_key" value="' . esc_attr($api_key) . '" class="regular-text">';
+}
+
+/**
+ * Outputs the form field for selecting custom post types.
+ */
+function aigfp_image_generator_cpts_field_callback()
+{
+    $selected_cpts = get_option('aigfp_selected_cpts', array());
+    $post_types = get_post_types(array('public' => true), 'objects');
+
+    foreach ($post_types as $post_type) {
+        $checked = in_array($post_type->name, $selected_cpts) ? 'checked' : '';
+        echo '<label><input type="checkbox" name="aigfp_selected_cpts[]" value="' . esc_attr($post_type->name) . '" ' . esc_attr($checked) . '> ' . esc_html($post_type->label) . '</label><br>';
+    }
+}
+
+/**
+ * Sanitizes the selected CPTs.
+ */
+function aigfp_sanitize_cpts($input)
+{
+    return is_array($input) ? array_map('sanitize_text_field', $input) : array();
 }

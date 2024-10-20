@@ -1,6 +1,7 @@
 jQuery(document).ready(function ($) {
     $('#generate-aigfp-image').click(function () {
         var postId = $('#post_ID').val();
+        var imageSize = $('#size-aigfp-image').val();
 
         // Disable the button to prevent multiple clicks
         $('#generate-aigfp-image').prop('disabled', true).text('Generating...');
@@ -9,6 +10,7 @@ jQuery(document).ready(function ($) {
         var data = {
             action: 'generate_aigfp_image',
             post_id: postId,
+            image_size: imageSize,
             nonce: aigfp_image_generator.nonce
         };
         console.log(data);
@@ -40,6 +42,7 @@ jQuery(document).ready(function ($) {
                         if (response.success) {
                             alert('Featured image set successfully.');
                             $('#aigfp-image-result').html('');
+                            wp.media.featuredImage.set(response.data.attachment_id);  // Set the featured image
                         } else {
                             alert('Error setting featured image: ' + response.data);
                         }
@@ -53,7 +56,7 @@ jQuery(document).ready(function ($) {
         }).fail(function (jqXHR, textStatus, errorThrown) {
             $('#aigfp-image-result').html('<p>Error: ' + textStatus + ' - ' + errorThrown + '</p>');
         }).always(function () {
-            $('#generate-aigfp-image').prop('disabled', false).text('Generate AI Image');
+            $('#generate-aigfp-image').prop('disabled', false).text('Regenerate AI Image');
         });
     });
 

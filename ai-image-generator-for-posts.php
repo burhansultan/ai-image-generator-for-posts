@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: AI Image Generator for Posts
+ * Plugin Name: AI Featured Image Generator for Posts
  * Description: Adds a button to generate AI images for posts based on title and content using Together API.
  * Version: 1.0
  * Author: Muhammad Burhan Sultan
@@ -56,14 +56,21 @@ add_action('do_meta_boxes', 'aigfp_image_generator_add_below_featured_image_meta
  * @since 1.0
  */
 function aigfp_image_generator_add_below_featured_image_meta_box()
-{
-    add_meta_box('aigfp_image_generator', __('AI Image Generator', 'ai-image-generator-for-posts'), 'aigfp_image_generator_meta_box_callback', 'post', 'side', 'low');
+{   
+    $selected_post_type = get_option('aigfp_selected_cpts');
+    add_meta_box('aigfp_image_generator', __('AI Image Generator', 'ai-image-generator-for-posts'), 'aigfp_image_generator_meta_box_callback', $selected_post_type, 'side', 'low');
 }
 
 // Callback function to display the button in the new meta box
 function aigfp_image_generator_meta_box_callback($post)
 {
     echo '<div id="ai-image-generator-for-posts-container" style="margin-top: 10px;">
+    <label for="size-aigfp-image"><p>'. esc_html__('Select Image Size', 'ai-image-generator-for-posts') .'<p></label>        
+    <select id="size-aigfp-image" name="size-aigfp-image">
+            <option value="1" selected>' . esc_html__('1:1 = 400 x 400 pixels', 'ai-image-generator-for-posts') . '</option>
+            <option value="3">' . esc_html__('3:2 = 960 x 640 pixels', 'ai-image-generator-for-posts') . '</option>
+            <option value="16">' . esc_html__('16:9 = 1280 x 720 pixels', 'ai-image-generator-for-posts') . '</option>    
+            </select><br><br>
             <button type="button" class="button button-primary" id="generate-aigfp-image">' . esc_html__('Generate AI Image', 'ai-image-generator-for-posts') . '</button>
             <div id="aigfp-image-result"></div>
           </div>';
@@ -91,9 +98,16 @@ function aigfp_image_generator_ajax_generate_image()
     if (isset($_POST['post_id'])) {
         $post_id = intval($_POST['post_id']);
     }
+    if(isset($_POST['image_size'])){
+        $image_size = intval($_POST['image_size']);
+    }
     if (!$post_id) {
         wp_send_json_error(__('Invalid post ID.', 'ai-image-generator-for-posts'));
         return;
+    }
+
+    if (!$image_size) {
+        $image_size = '16';
     }
 
     // Get the post data
@@ -111,7 +125,7 @@ function aigfp_image_generator_ajax_generate_image()
     }
 
     // Call the image generation function
-    $image_url = aigfp_image_generator_generate_image($post->post_title, $post->post_content, $api_key);
+    $image_url = aigfp_image_generator_generate_image($post->post_title, $post->post_content, $image_size,$api_key);
 
     // Check if image generation was successful
     if ($image_url) {
@@ -121,61 +135,7 @@ function aigfp_image_generator_ajax_generate_image()
     }
 }
 
-
-/**
- * Generates an AI image based on a given title and content using the Together API.
- *
- * @since 1.0
- *
- * @param string $title The title of the post.
- * @param string $content The content of the post.
- * @param string $api_key The user's Together AI API key.
- *
- * @return string|false The generated image as a base64-encoded string, or false if the image generation failed.
- */
-function aigfp_image_generator_generate_image($title, $content, $api_key)
-{
-    $api_url = 'https://api.together.xyz/v1/images/generations';
-    $prompt = sanitize_text_field($title . ' ' . $content);
-
-    $response = wp_remote_post($api_url, array(
-        'body' => wp_json_encode(array(
-            "model" => "black-forest-labs/FLUX.1-schnell-Free",
-            "prompt" => $prompt,
-            "width" => 1024,
-            "height" => 768,
-            "steps" => 1,
-            "n" => 1,
-            "response_format" => "b64_json"
-        )),
-        'headers' => array(
-            'Authorization' => 'Bearer ' . $api_key,
-            'Content-Type' => 'application/json',
-        ),
-        'timeout' => 30,
-    ));
-
-    if (is_wp_error($response)) {
-        return false;
-    }
-
-
-    $body = wp_remote_retrieve_body($response);
-
-    // Decode the JSON response
-    $result = json_decode($body, true);
-
-    $b64image = $result['data'][0]['b64_json'];
-
-    // Check if the 'image' field exists
-    if (isset($b64image)) {
-        return $b64image;
-    }
-
-    return false;
-}
-
-
+include('api/ai-image-generator-for-posts-api.php');
 
 // Handle setting the Base64 image and storing the metadata temporarily
 add_action('wp_ajax_set_aigfp_image_as_featured', 'aigfp_image_generator_set_temp_featured_image');
@@ -200,8 +160,10 @@ function aigfp_image_generator_set_temp_featured_image()
     }
 
     // Check if it's a valid post type (only for "post")
-    if (get_post_type($post_id) !== 'post') {
-        wp_send_json_error(__('Invalid post type. This action only applies to posts.', 'ai-image-generator-for-posts'));
+    $post_type = get_post_type($post_id);
+    $selected_post_type = get_option('aigfp_selected_cpts');
+    if (!in_array($post_type, $selected_post_type)) {
+        wp_send_json_error(__('Invalid post type. This action only applies to the selected post types.', 'ai-image-generator-for-posts'));
     }
 
     if (!$post_id || !$base64_image) {
@@ -256,7 +218,10 @@ function aigfp_image_generator_set_temp_featured_image()
     // Temporarily store the image attachment ID in post meta
     update_post_meta($post_id, '_temp_aigfp_featured_image', $attach_id);
 
-    wp_send_json_success(__('Image ready to be set as featured image upon saving the post.', 'ai-image-generator-for-posts'));
+    wp_send_json_success(array(
+        'message' => __('Image ready to be set as featured image upon saving the post.', 'ai-image-generator-for-posts'),
+        'attachment_id' => $attach_id  // Return the attachment ID for JavaScript
+    ));
 }
 
 add_action('wp_ajax_set_native_featured_image', 'aigfp_set_native_featured_image');
@@ -304,8 +269,10 @@ function aigfp_image_generator_save_featured_image($post_id, $post)
     // Skip if this is an autosave
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
 
+    $selected_post_type = get_option('aigfp_selected_cpts');
+
     // Only apply to 'post' type
-    if ($post->post_type !== 'post') return;
+    if (!in_array($post->post_type, $selected_post_type))  return;
 
     // Check if an AI image is set in meta
     $aigfp_image_id = get_post_meta($post_id, '_temp_aigfp_featured_image', true);
