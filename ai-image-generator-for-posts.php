@@ -3,7 +3,7 @@
 /**
  * Plugin Name: AI Featured Image Generator for Posts
  * Description: Adds a button to generate AI images for posts based on title and content using Together API.
- * Version: 1.0
+ * Version: 2.0
  * Author: Muhammad Burhan Sultan
  * License: GPL2
  * Text Domain: ai-image-generator-for-posts
@@ -18,6 +18,9 @@ require_once(plugin_dir_path(__FILE__) . 'admin/ai-image-generator-for-posts-set
 
 // Enqueue JavaScript for handling the button and AJAX
 add_action('admin_enqueue_scripts', 'aigfp_image_generator_enqueue_scripts');
+
+$aigfp_base_url = plugin_dir_url(__FILE__);
+define('AIGFP_BASE_PATH',$aigfp_base_url);
 /**
  * Enqueue JavaScript for handling the button and AJAX
  *
@@ -28,13 +31,31 @@ add_action('admin_enqueue_scripts', 'aigfp_image_generator_enqueue_scripts');
  * @param string $hook_suffix The current page hook suffix.
  */
 function aigfp_image_generator_enqueue_scripts($hook_suffix)
-{
+{   
+    if('settings_page_ai-image-generator-for-posts-settings' === $hook_suffix){
+        wp_enqueue_style(
+            'ai-image-generator-for-posts-bootstrap-css',
+            plugin_dir_url(__FILE__) . 'css/bootstrap.min.css',
+            array(),
+            5.3,
+            'all'
+        );
+
+        wp_enqueue_style(
+            'ai-image-generator-for-posts-css',
+            plugin_dir_url(__FILE__) . 'css/ai-image-generator-for-posts.css',
+            array(),
+            2.0,
+            'all'
+        );
+
+    }
     if ('post.php' === $hook_suffix || 'post-new.php' === $hook_suffix) {
         wp_enqueue_script(
             'ai-image-generator-for-posts-js',
             plugin_dir_url(__FILE__) . 'js/ai-image-generator-for-posts.js',
             array('jquery'),
-            1.0,
+            2.0,
             true
         );
 

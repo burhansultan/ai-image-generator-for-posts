@@ -31,9 +31,10 @@ function aigfp_image_generator_add_settings_page()
 function aigfp_image_generator_settings_page()
 {
 ?>
-    <div class="wrap">
-        <h1><?php esc_html_e('AI Image Generator Settings', 'ai-image-generator-for-posts'); ?></h1>
-        <form method="post" action="options.php">
+    <div class="wrap container text-center col-6 aigfp-container">
+        <img src="<?php echo  AIGFP_BASE_PATH . 'images/icon-256x256.png' ?>" width="120" class="img-responsive">
+        <h1 class="text-center"><?php esc_html_e('AI Image Generator Settings', 'ai-image-generator-for-posts'); ?></h1>
+        <form class="form table" method="post" action="options.php">
             <?php
             settings_fields('aigfp_image_generator_settings');
             do_settings_sections('ai-image-generator-for-posts-settings');
@@ -128,7 +129,7 @@ function aigfp_image_generator_section_callback()
 function aigfp_image_generator_api_key_field_callback()
 {
     $api_key = get_option('aigfp_api_key');
-    echo '<input type="text" name="aigfp_api_key" value="' . esc_attr($api_key) . '" class="regular-text">';
+    echo '<input type="text" class="form-control form-control-lg" name="aigfp_api_key" value="' . esc_attr($api_key) . '" class="regular-text">';
 }
 
 /**
@@ -138,11 +139,15 @@ function aigfp_image_generator_cpts_field_callback()
 {
     $selected_cpts = get_option('aigfp_selected_cpts', array());
     $post_types = get_post_types(array('public' => true), 'objects');
-
+    echo '<div class="text-left row">';
     foreach ($post_types as $post_type) {
         $checked = in_array($post_type->name, $selected_cpts) ? 'checked' : '';
-        echo '<label><input type="checkbox" name="aigfp_selected_cpts[]" value="' . esc_attr($post_type->name) . '" ' . esc_attr($checked) . '> ' . esc_html($post_type->label) . '</label><br>';
+        echo '<div class="list-group-item  text-start col-3">
+        <input type="checkbox" class="form-check-input" name="aigfp_selected_cpts[]" value="' . esc_attr($post_type->name) . '" ' . esc_attr($checked) . '>
+        <label class="form-check-label">' . esc_html($post_type->label) . '</label>
+        </div>';
     }
+    echo '</div>';
 }
 
 /**

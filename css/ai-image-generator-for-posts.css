@@ -1,0 +1,38 @@
+.aigfp-container{
+    background: #f1f1f1;
+    padding: 20px;
+    border-radius: 10px;
+}
+.aigfp-container table,.aigfp-container .table,.aigfp-container table tbody{
+    background: #f1f1f1 !important;
+    --bs-table-bg: #f1f1f1 !important;
+}
+.aigfp-container  p.submit{
+    text-align:center;
+}
+.aigfp-container p.submit input{
+    border-radius: 20px;
+    background: #213440;
+    color: #f1f1f1;
+    border: none;
+    padding: 5px 15px;
+}
+.aigfp-container  .notice{
+    color: #fff;
+    border-radius: 30px;
+}
+.aigfp-container  .notice.notice-success{
+    background: #213440;
+    border-radius: 30px;
+}
+.aigfp-container  .notice.notice-error{
+    background: #d63638;
+    color: #fff;
+    border-radius: 30px;
+}
+.aigfp-container .notice-dismiss:before{
+    color: #fff;
+}
+.aigfp-container h2{
+    font-size: 20px;
+}
